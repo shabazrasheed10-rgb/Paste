@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PasteBoard</title>
-  <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -513,31 +513,31 @@
 
       if (isListening) {
         isListening = false;
-        recognition.stop();
+        recognition.abort();
         micBtn.classList.remove('listening');
         showToast('Stopped recording');
+        snapshot(board.value);
         return;
       }
 
-      // Start fresh
       recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
-      recognition.continuous = true;  // stays open, no restart needed
+      recognition.continuous = false;  // one clean session, no overlaps
       recognition.interimResults = true;
 
-      let finalText = board.value;
+      const textBefore = board.value;  // snapshot of text before we started
       isListening = true;
       micBtn.classList.add('listening');
       showToast('🎤 Listening… tap mic to stop');
 
       recognition.onresult = (e) => {
         let interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalText += t;
-          else interim += t;
+        let final = '';
+        for (let i = 0; i < e.results.length; i++) {
+          if (e.results[i].isFinal) final += e.results[i][0].transcript;
+          else interim += e.results[i][0].transcript;
         }
-        board.value = finalText + interim;
+        board.value = textBefore + final + interim;
         board.selectionStart = board.selectionEnd = board.value.length;
         saveToStorage(board.value);
         updateStats();
@@ -551,12 +551,10 @@
       };
 
       recognition.onend = () => {
-        if (isListening) {
-          // Only restart if continuous mode ended unexpectedly
-          try { recognition.start(); } catch(e) {}
-        } else {
-          snapshot(board.value);
-        }
+        // Only runs once — no restart, no loop
+        isListening = false;
+        micBtn.classList.remove('listening');
+        snapshot(board.value);
       };
 
       recognition.start();
