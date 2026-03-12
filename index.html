@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -236,6 +236,35 @@
 
     .icon { width: 15px; height: 15px; flex-shrink: 0; }
 
+    .btn-mic {
+      flex: 0 0 auto;
+      width: 54px;
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+      padding: 0.8rem;
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .btn-mic:hover:not(:disabled) {
+      color: var(--text);
+      border-color: #888;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-mic.listening {
+      color: #ff6b6b;
+      border-color: #ff6b6b;
+      background: rgba(255,107,107,0.08);
+      animation: pulse-mic 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-mic {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
+    }
+
     .toast {
       position: fixed;
       bottom: 1.5rem;
@@ -277,7 +306,7 @@
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
+<button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
           <button class="tool-btn" onclick="copyToClipboard()">↑ copy all</button>
           <div class="sep"></div>
           <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
@@ -301,6 +330,15 @@
             <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
           </svg>
           Undo
+        </button>
+
+        <button class="btn btn-mic" id="micBtn" onclick="toggleVoice()" title="Voice to text">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
         </button>
 
         <button class="btn btn-redo" id="redoBtn" onclick="doRedo()" disabled>
@@ -454,6 +492,83 @@
       toast.textContent = msg;
       toast.className = 'toast ' + type + ' show';
       toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2200);
+    }
+
+    // ── Voice to text ──────────────────────────────────────────────
+    const micBtn = document.getElementById('micBtn');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (!SpeechRecognition) {
+      micBtn.disabled = true;
+      micBtn.title = 'Voice input not supported in this browser';
+    }
+
+    function toggleVoice() {
+      if (!SpeechRecognition) {
+        showToast('Not supported in this browser', 'error');
+        return;
+      }
+
+      if (isListening) {
+        // Stop
+        isListening = false;
+        recognition.stop();
+        micBtn.classList.remove('listening');
+        showToast('Stopped recording');
+        return;
+      }
+
+      // Start
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      let finalText = board.value;
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        showToast('🎤 Listening… tap mic to stop');
+      };
+
+      recognition.onresult = (e) => {
+        let interimText = '';
+        let newFinal = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            newFinal += e.results[i][0].transcript;
+          } else {
+            interimText += e.results[i][0].transcript;
+          }
+        }
+        if (newFinal) finalText += newFinal;
+        board.value = finalText + interimText;
+        board.selectionStart = board.selectionEnd = board.value.length;
+        saveToStorage(board.value);
+        updateStats();
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'no-speech') return;
+        isListening = false;
+        micBtn.classList.remove('listening');
+        showToast('Mic error: ' + e.error, 'error');
+      };
+
+      recognition.onend = () => {
+        // Auto-restart if user hasn't stopped manually
+        if (isListening) {
+          try { recognition.start(); } catch(e) {}
+        } else {
+          micBtn.classList.remove('listening');
+          snapshot(board.value);
+        }
+      };
+
+      recognition.start();
     }
 
     // ── Keyboard shortcuts ─────────────────────────────────────────
