@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+   <link rel="manifest" href="manifest.json">
+  <title>PasteBoard</title>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0f;
+      --surface: #161618;
+      --border: #2a2a2e;
+      --accent: #e8ff47;
+      --accent-dim: rgba(232, 255, 71, 0.12);
+      --text: #f0f0f0;
+      --muted: #666;
+      --success: #47ffb2;
+      --error: #ff6b6b;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.2rem 1rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo span { color: var(--accent); }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Card fills remaining height */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(232,255,71,0.04), 0 24px 60px rgba(0,0,0,0.5);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      background: #111113;
+      flex-shrink: 0;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .char-count {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-left: 0.75rem;
+    }
+
+    .char-count span { color: var(--accent); }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tool-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.22rem 0.55rem;
+      border-radius: 3px;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .tool-btn:hover:not(:disabled) {
+      color: var(--text);
+      border-color: var(--border);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .tool-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .tool-btn.clear:hover:not(:disabled) {
+      color: var(--error);
+      border-color: rgba(255,107,107,0.3);
+      background: rgba(255,107,107,0.06);
+    }
+
+    .sep {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+    }
+
+    /* Textarea — fills all remaining card space */
+    .textarea-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      display: flex;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      background: var(--surface);
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      padding: 1.4rem 1.5rem;
+      resize: none;
+      caret-color: var(--accent);
+      transition: background 0.2s;
+      overflow-y: auto;
+    }
+
+    textarea::placeholder { color: #2e2e33; }
+    textarea:focus { background: #17171a; }
+
+    /* Scrollbar styling */
+    textarea::-webkit-scrollbar { width: 6px; }
+    textarea::-webkit-scrollbar-track { background: transparent; }
+    textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    textarea::-webkit-scrollbar-thumb:hover { background: #3a3a3e; }
+
+    /* Buttons */
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem 1.2rem;
+      border-top: 1px solid var(--border);
+      background: #111113;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0.8rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-undo {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-undo:hover:not(:disabled) {
+      border-color: #888;
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .btn-undo:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-redo {
+      background: var(--accent);
+      color: #0a0a0a;
+      border-color: var(--accent);
+    }
+
+    .btn-redo:hover:not(:disabled) {
+      background: #f2ff6a;
+      box-shadow: 0 0 20px rgba(232,255,71,0.3), 0 0 40px rgba(232,255,71,0.1);
+    }
+
+    .btn-redo:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .icon {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #1e1e21;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 3px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.18s, transform 0.18s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error   { border-color: var(--error);   color: var(--error); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo">Paste<span>Board</span></div>
+      <div class="tagline">// drop anything here</div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="char-count"><span id="charNum">0</span> chars &nbsp;·&nbsp; <span id="lineNum">0</span> lines</div>
+        </div>
+        <div class="toolbar-right">
+          <button class="tool-btn" id="pasteBtn" onclick="pasteFromClipboard()">
+            ↓ paste
+          </button>
+          <button class="tool-btn" id="copyBtn" onclick="copyToClipboard()">
+            ↑ copy all
+          </button>
+          <div class="sep"></div>
+          <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
+        </div>
+      </div>
+
+      <div class="textarea-wrap">
+        <textarea
+          id="board"
+          placeholder="Paste your text, code, or anything long here…"
+          spellcheck="false"
+          autocorrect="off"
+          autocomplete="off"
+        ></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-undo" id="undoBtn" onclick="doUndo()" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 14 4 9 9 4"/>
+            <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+          </svg>
+          Undo
+        </button>
+
+        <button class="btn btn-redo" id="redoBtn" onclick="doRedo()" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 14 20 9 15 4"/>
+            <path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
+          </svg>
+          Redo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const board   = document.getElementById('board');
+    const charNum = document.getElementById('charNum');
+    const lineNum = document.getElementById('lineNum');
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    const toast   = document.getElementById('toast');
+
+    // ── History stack ──────────────────────────────────────────────
+    let history = [''];
+    let historyIndex = 0;
+    let isUndoRedo = false;
+
+    function pushHistory(value) {
+      // Trim any future states when a new change comes in
+      history = history.slice(0, historyIndex + 1);
+      // Avoid duplicate consecutive states
+      if (history[historyIndex] === value) return;
+      history.push(value);
+      historyIndex = history.length - 1;
+      updateButtons();
+    }
+
+    function updateButtons() {
+      undoBtn.disabled = historyIndex <= 0;
+      redoBtn.disabled = historyIndex >= history.length - 1;
+    }
+
+    function updateStats() {
+      const v = board.value;
+      charNum.textContent = v.length.toLocaleString();
+      lineNum.textContent = v ? v.split('\n').length.toLocaleString() : '0';
+    }
+
+    // ── Listen for changes ─────────────────────────────────────────
+    let debounceTimer;
+    board.addEventListener('input', () => {
+      if (isUndoRedo) return;
+      updateStats();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => pushHistory(board.value), 300);
+    });
+
+    // ── Undo ───────────────────────────────────────────────────────
+    function doUndo() {
+      if (historyIndex <= 0) return;
+      // Save current state if not yet snapshotted
+      if (history[historyIndex] !== board.value) {
+        pushHistory(board.value);
+      }
+      historyIndex--;
+      applyHistory();
+      showToast('↩ Undone');
+    }
+
+    // ── Redo ───────────────────────────────────────────────────────
+    function doRedo() {
+      if (historyIndex >= history.length - 1) return;
+      historyIndex++;
+      applyHistory();
+      showToast('↪ Redone');
+    }
+
+    function applyHistory() {
+      isUndoRedo = true;
+      board.value = history[historyIndex];
+      isUndoRedo = false;
+      updateStats();
+      updateButtons();
+    }
+
+    // ── Paste from clipboard ───────────────────────────────────────
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) { showToast('Clipboard is empty', 'error'); return; }
+        const start = board.selectionStart;
+        const end   = board.selectionEnd;
+        board.value = board.value.slice(0, start) + text + board.value.slice(end);
+        board.selectionStart = board.selectionEnd = start + text.length;
+        pushHistory(board.value);
+        updateStats();
+        showToast(`↓ Pasted ${text.length.toLocaleString()} chars`);
+        board.scrollTop = board.scrollHeight;
+      } catch {
+        board.focus();
+        showToast('Press Ctrl+V / Cmd+V to paste', 'error');
+      }
+    }
+
+    // ── Copy all to clipboard ──────────────────────────────────────
+    async function copyToClipboard() {
+      if (!board.value) { showToast('Nothing to copy', 'error'); return; }
+      try {
+        await navigator.clipboard.writeText(board.value);
+        showToast(`↑ Copied ${board.value.length.toLocaleString()} chars`);
+      } catch {
+        board.select();
+        document.execCommand('copy');
+        showToast('Copied!');
+      }
+    }
+
+    // ── Clear ──────────────────────────────────────────────────────
+    function clearBoard() {
+      if (!board.value) return;
+      pushHistory(board.value);
+      board.value = '';
+      pushHistory('');
+      updateStats();
+      showToast('Board cleared');
+      board.focus();
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.className = `toast ${type} show`;
+      toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2200);
+    }
+
+    // ── Keyboard shortcuts ─────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && e.key === 'z') { e.preventDefault(); doUndo(); }
+      if (mod && (e.shiftKey && e.key === 'z' || e.key === 'y')) { e.preventDefault(); doRedo(); }
+    });
+  </script>
+</body>
+</html>
+
