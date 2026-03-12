@@ -11,7 +11,6 @@
     :root {
       --bg: #0e0e0f;
       --surface: #161618;
-      --surface2: #1c1c1f;
       --border: #2a2a2e;
       --accent: #e8ff47;
       --accent-dim: rgba(232,255,71,0.1);
@@ -27,9 +26,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     body::before {
@@ -46,28 +43,19 @@
 
     /* ── SCREENS ── */
     .screen {
-      display: none;
       position: fixed;
       inset: 0;
       z-index: 1;
+      display: none;
       flex-direction: column;
-      overflow-y: auto;
+      background: var(--bg);
     }
     .screen.active { display: flex; }
 
-    /* ── HOME SCREEN ── */
-    #homeScreen {
-      padding: 2rem 1.5rem;
-      background: var(--bg);
-    }
+    /* ── HOME ── */
+    #homeScreen { overflow-y: auto; padding: 2rem 1.5rem 3rem; }
 
-    #homeScreen > header,
-    #homeScreen > .cards-grid {
-      max-width: 1100px;
-      margin-left: auto;
-      margin-right: auto;
-      width: 100%;
-    }
+    .home-inner { max-width: 1100px; margin: 0; }
 
     header {
       display: flex;
@@ -82,7 +70,6 @@
       font-weight: 800;
       letter-spacing: -0.02em;
     }
-
     .logo span { color: var(--accent); }
 
     .tagline {
@@ -92,26 +79,27 @@
       text-transform: uppercase;
     }
 
-    /* Cards grid */
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
+      align-items: start;
     }
+
+    /* Card wrapper — name sits below */
+    .card-wrap { display: flex; flex-direction: column; gap: 0.45rem; }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 1.25rem;
+      padding: 1.1rem 1.1rem 0.9rem;
       cursor: pointer;
       transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-      position: relative;
-      min-height: 160px;
+      height: 180px;
       display: flex;
       flex-direction: column;
     }
-
     .card:hover {
       border-color: #444;
       transform: translateY(-2px);
@@ -119,98 +107,189 @@
     }
 
     .card-date {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       color: var(--muted);
-      letter-spacing: 0.05em;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
     }
 
     .card-preview {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       line-height: 1.6;
-      color: #aaa;
+      color: #999;
       flex: 1;
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 5;
+      -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       word-break: break-all;
     }
 
-    .card-footer {
-      margin-top: 0.75rem;
+    .card-bottom {
+      margin-top: 0.6rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .card-chars {
-      font-size: 0.62rem;
-      color: var(--muted);
-    }
+    .card-chars { font-size: 0.6rem; color: var(--muted); }
 
-    .card-delete {
+    /* Three-dot menu */
+    .card-menu-btn {
       background: none;
       border: none;
       color: var(--muted);
-      font-size: 0.7rem;
       cursor: pointer;
-      padding: 0.2rem 0.4rem;
+      padding: 0.15rem 0.35rem;
       border-radius: 3px;
+      font-size: 1rem;
+      line-height: 1;
       transition: color 0.15s, background 0.15s;
+    }
+    .card-menu-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    .card-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      padding: 0 0.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Dropdown */
+    .dropdown {
+      position: fixed;
+      background: #1e1e21;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 200;
+      overflow: hidden;
+      min-width: 130px;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.6rem 0.9rem;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.12s;
+      letter-spacing: 0.03em;
     }
+    .dropdown-item:hover { background: rgba(255,255,255,0.06); }
+    .dropdown-item.danger { color: var(--error); }
+    .dropdown-item.danger:hover { background: rgba(255,107,107,0.08); }
 
-    .card-delete:hover {
-      color: var(--error);
-      background: rgba(255,107,107,0.08);
-    }
-
-    /* New card button */
+    /* + New card */
     .card-new {
       background: transparent;
-      border: 1px dashed #333;
+      border: 1px dashed #2e2e33;
       border-radius: 6px;
-      min-height: 160px;
+      min-height: 140px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.4rem;
       color: var(--muted);
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       letter-spacing: 0.05em;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
     }
-
     .card-new:hover {
       border-color: var(--accent);
       background: var(--accent-dim);
       color: var(--accent);
     }
+    .card-new-plus { font-size: 2.2rem; font-weight: 300; line-height: 1; }
 
-    .card-new-icon {
-      font-size: 2rem;
-      font-weight: 300;
-      line-height: 1;
-    }
-
-    /* Empty state */
-    .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 4rem 0;
-      color: var(--muted);
-      font-size: 0.78rem;
+    .empty-hint {
+      grid-column: 1/-1;
+      color: #2e2e33;
+      font-size: 0.75rem;
+      padding: 3rem 0;
+      text-align: left;
       line-height: 2;
     }
 
-    /* ── EDITOR SCREEN ── */
-    #editorScreen {
-      background: var(--bg);
+    /* ── MODAL (name input) ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
+    .modal {
+      background: #1a1a1d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .modal-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+      caret-color: var(--accent);
+      transition: border-color 0.15s;
+      margin-bottom: 1rem;
+    }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-input::placeholder { color: #333; }
+    .modal-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+    .modal-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+    .modal-btn:hover { color: var(--text); border-color: #666; }
+    .modal-btn.primary {
+      background: var(--accent);
+      color: #0a0a0a;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .modal-btn.primary:hover { background: #f2ff6a; }
+
+    /* ── EDITOR ── */
+    #editorScreen { overflow: hidden; }
 
     .editor-toolbar {
       display: flex;
@@ -222,9 +301,8 @@
       flex-shrink: 0;
       gap: 0.75rem;
     }
-
-    .editor-toolbar-left { display: flex; align-items: center; gap: 0.75rem; }
-    .editor-toolbar-right { display: flex; align-items: center; gap: 0.6rem; }
+    .editor-left { display: flex; align-items: center; gap: 0.75rem; }
+    .editor-right { display: flex; align-items: center; gap: 0.5rem; }
 
     .back-btn {
       background: none;
@@ -233,22 +311,23 @@
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.7rem;
       cursor: pointer;
-      padding: 0.3rem 0.7rem;
+      padding: 0.28rem 0.65rem;
       border-radius: 3px;
       transition: all 0.15s;
-      letter-spacing: 0.05em;
     }
+    .back-btn:hover { color: var(--text); border-color: #666; }
 
-    .back-btn:hover {
+    .editor-title {
+      font-size: 0.78rem;
+      font-weight: 600;
       color: var(--text);
-      border-color: #666;
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .editor-stats {
-      font-size: 0.68rem;
-      color: var(--muted);
-    }
-
+    .editor-stats { font-size: 0.65rem; color: var(--muted); }
     .editor-stats span { color: var(--accent); }
 
     .tool-btn {
@@ -258,24 +337,14 @@
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.68rem;
       cursor: pointer;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 0.25rem 0.6rem;
+      padding: 0.22rem 0.55rem;
       border-radius: 3px;
       transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-
-    .tool-btn:hover {
-      color: var(--text);
-      border-color: var(--border);
-      background: rgba(255,255,255,0.04);
-    }
-
-    .tool-btn.clear:hover {
-      color: var(--error);
-      border-color: rgba(255,107,107,0.3);
-      background: rgba(255,107,107,0.06);
-    }
+    .tool-btn:hover { color: var(--text); border-color: var(--border); background: rgba(255,255,255,0.04); }
+    .tool-btn.danger:hover { color: var(--error); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.06); }
 
     .sep { width: 1px; height: 16px; background: var(--border); }
 
@@ -292,19 +361,17 @@
       padding: 1.4rem 1.5rem;
       resize: none;
       caret-color: var(--accent);
+      overflow-y: auto;
     }
-
     textarea::placeholder { color: #2a2a2e; }
     textarea:focus { background: #17171a; }
     textarea::-webkit-scrollbar { width: 6px; }
-    textarea::-webkit-scrollbar-track { background: transparent; }
     textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    /* Bottom action bar */
     .actions {
       display: flex;
-      gap: 0.75rem;
-      padding: 1rem 1.2rem;
+      gap: 0.65rem;
+      padding: 0.9rem 1.2rem;
       border-top: 1px solid var(--border);
       background: #111113;
       flex-shrink: 0;
@@ -316,63 +383,44 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      padding: 0.8rem 1.5rem;
+      padding: 0.75rem 1rem;
       border: 1px solid var(--border);
       border-radius: 3px;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       cursor: pointer;
       transition: all 0.15s;
     }
-
     .btn:active:not(:disabled) { transform: scale(0.98); }
     .btn:disabled { opacity: 0.28; cursor: not-allowed; }
 
-    .btn-undo {
-      background: transparent;
-      color: var(--text);
-      border-color: var(--border);
-    }
-    .btn-undo:hover:not(:disabled) {
-      border-color: #888;
-      background: rgba(255,255,255,0.04);
-    }
+    .btn-undo { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-undo:hover:not(:disabled) { border-color: #777; background: rgba(255,255,255,0.04); }
 
     .btn-mic {
-      flex: 0 0 54px;
+      flex: 0 0 50px;
       background: transparent;
       color: var(--muted);
       border-color: var(--border);
-      padding: 0.8rem;
+      padding: 0.75rem;
     }
-    .btn-mic:hover {
-      color: var(--text);
-      border-color: #888;
-    }
+    .btn-mic:hover { color: var(--text); border-color: #777; }
     .btn-mic.listening {
       color: var(--error);
       border-color: var(--error);
       background: rgba(255,107,107,0.08);
-      animation: pulse-mic 1.2s ease-in-out infinite;
+      animation: pulse 1.2s ease-in-out infinite;
     }
-
-    @keyframes pulse-mic {
+    @keyframes pulse {
       0%,100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.4); }
-      50%      { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
+      50%      { box-shadow: 0 0 0 5px rgba(255,107,107,0); }
     }
 
-    .btn-redo {
-      background: transparent;
-      color: var(--text);
-      border-color: var(--border);
-    }
-    .btn-redo:hover:not(:disabled) {
-      border-color: #888;
-      background: rgba(255,255,255,0.04);
-    }
+    .btn-redo { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-redo:hover:not(:disabled) { border-color: #777; background: rgba(255,255,255,0.04); }
 
     .btn-save {
       background: var(--accent);
@@ -380,10 +428,7 @@
       border-color: var(--accent);
       font-weight: 700;
     }
-    .btn-save:hover {
-      background: #f2ff6a;
-      box-shadow: 0 0 20px rgba(232,255,71,0.3);
-    }
+    .btn-save:hover { background: #f2ff6a; box-shadow: 0 0 20px rgba(232,255,71,0.25); }
 
     .icon { width: 15px; height: 15px; flex-shrink: 0; }
 
@@ -392,13 +437,13 @@
       position: fixed;
       bottom: 1.5rem;
       left: 50%;
-      transform: translateX(-50%) translateY(16px);
+      transform: translateX(-50%) translateY(12px);
       background: #1e1e21;
       border: 1px solid var(--border);
       color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.75rem;
-      padding: 0.55rem 1.1rem;
+      font-size: 0.73rem;
+      padding: 0.5rem 1rem;
       border-radius: 3px;
       z-index: 999;
       opacity: 0;
@@ -408,77 +453,78 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast.success { border-color: var(--success); color: var(--success); }
-    .toast.error   { border-color: var(--error); color: var(--error); }
+    .toast.error   { border-color: var(--error);   color: var(--error); }
   </style>
 </head>
 <body>
 
-  <!-- ── HOME SCREEN ── -->
+  <!-- HOME -->
   <div id="homeScreen" class="screen active">
-    <header>
-      <div class="logo">Paste<span>Board</span></div>
-      <div class="tagline">// your boards</div>
-    </header>
-    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="home-inner">
+      <header>
+        <div class="logo">Paste<span>Board</span></div>
+        <div class="tagline">// your boards</div>
+      </header>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
   </div>
 
-  <!-- ── EDITOR SCREEN ── -->
+  <!-- EDITOR -->
   <div id="editorScreen" class="screen">
     <div class="editor-toolbar">
-      <div class="editor-toolbar-left">
+      <div class="editor-left">
         <button class="back-btn" onclick="goHome()">← back</button>
-        <div class="editor-stats">
-          <span id="charNum">0</span> chars &nbsp;·&nbsp; <span id="lineNum">0</span> lines
-        </div>
+        <div class="editor-title" id="editorTitle"></div>
+        <div class="editor-stats"><span id="charNum">0</span> chars · <span id="lineNum">0</span> lines</div>
       </div>
-      <div class="editor-toolbar-right">
+      <div class="editor-right">
         <button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
         <button class="tool-btn" onclick="copyToClipboard()">↑ copy</button>
         <div class="sep"></div>
-        <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
+        <button class="tool-btn danger" onclick="clearBoard()">✕ clear</button>
       </div>
     </div>
 
-    <textarea
-      id="board"
-      placeholder="Type, paste, or use the mic…"
-      spellcheck="false"
-      autocorrect="off"
-      autocomplete="off"
-    ></textarea>
+    <textarea id="board" placeholder="Type, paste, or speak…" spellcheck="false" autocorrect="off" autocomplete="off"></textarea>
 
     <div class="actions">
       <button class="btn btn-undo" id="undoBtn" onclick="doUndo()" disabled>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
-        </svg>
-        Undo
+        </svg>Undo
       </button>
-
-      <button class="btn btn-mic" id="micBtn" onclick="toggleVoice()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <button class="btn btn-mic" id="micBtn" onclick="toggleVoice()" title="Voice to text">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="2" width="6" height="11" rx="3"/>
           <path d="M5 10a7 7 0 0 0 14 0"/>
           <line x1="12" y1="19" x2="12" y2="22"/>
           <line x1="8" y1="22" x2="16" y2="22"/>
         </svg>
       </button>
-
       <button class="btn btn-redo" id="redoBtn" onclick="doRedo()" disabled>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
-        </svg>
-        Redo
+        </svg>Redo
       </button>
-
       <button class="btn btn-save" onclick="saveCard()">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/>
           <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        Save
+        </svg>Save
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Name your board</div>
+      <input class="modal-input" id="modalInput" placeholder="e.g. Work notes, Code snippets…" maxlength="40"/>
+      <div class="modal-actions">
+        <button class="modal-btn" id="modalCancel">Cancel</button>
+        <button class="modal-btn primary" id="modalConfirm">Create</button>
+      </div>
     </div>
   </div>
 
@@ -486,27 +532,17 @@
 
   <script>
     // ── Storage ────────────────────────────────────────────────────
-    const STORE_KEY = 'pasteboard_cards';
-
-    function loadCards() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
-      catch { return []; }
-    }
-
-    function saveCards(cards) {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(cards)); }
-      catch {}
-    }
+    const STORE = 'pb_cards_v2';
+    function loadCards() { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; } }
+    function saveCards(c) { try { localStorage.setItem(STORE, JSON.stringify(c)); } catch {} }
 
     // ── State ──────────────────────────────────────────────────────
     let cards = loadCards();
-    let currentCardId = null;
+    let currentId = null;
+    let hist = [''], histIdx = 0, isApplying = false, debounce;
+    let activeDropdown = null;
 
-    // Editor history
-    let hist = [''], idx = 0, isApplying = false;
-    let debounce;
-
-    // ── DOM refs ───────────────────────────────────────────────────
+    // ── DOM ────────────────────────────────────────────────────────
     const homeScreen   = document.getElementById('homeScreen');
     const editorScreen = document.getElementById('editorScreen');
     const board        = document.getElementById('board');
@@ -516,45 +552,100 @@
     const redoBtn      = document.getElementById('redoBtn');
     const micBtn       = document.getElementById('micBtn');
     const cardsGrid    = document.getElementById('cardsGrid');
+    const editorTitle  = document.getElementById('editorTitle');
     const toast        = document.getElementById('toast');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle   = document.getElementById('modalTitle');
+    const modalInput   = document.getElementById('modalInput');
+    const modalCancel  = document.getElementById('modalCancel');
+    const modalConfirm = document.getElementById('modalConfirm');
 
-    // ── Screen routing ─────────────────────────────────────────────
-    function showScreen(name) {
-      homeScreen.classList.toggle('active', name === 'home');
-      editorScreen.classList.toggle('active', name === 'editor');
+    // ── Screen ─────────────────────────────────────────────────────
+    function showScreen(s) {
+      homeScreen.classList.toggle('active', s === 'home');
+      editorScreen.classList.toggle('active', s === 'editor');
     }
+
+    // ── Modal ──────────────────────────────────────────────────────
+    let modalResolve = null;
+
+    function openModal(title, placeholder, confirmLabel, defaultVal = '') {
+      return new Promise(resolve => {
+        modalResolve = resolve;
+        modalTitle.textContent = title;
+        modalInput.placeholder = placeholder;
+        modalInput.value = defaultVal;
+        modalConfirm.textContent = confirmLabel;
+        modalOverlay.style.display = 'flex';
+        setTimeout(() => modalInput.focus(), 50);
+      });
+    }
+
+    function closeModal(value) {
+      modalOverlay.style.display = 'none';
+      if (modalResolve) { modalResolve(value); modalResolve = null; }
+    }
+
+    modalCancel.onclick  = () => closeModal(null);
+    modalConfirm.onclick = () => {
+      const v = modalInput.value.trim();
+      if (!v) { modalInput.focus(); modalInput.style.borderColor = 'var(--error)'; setTimeout(() => modalInput.style.borderColor = '', 600); return; }
+      closeModal(v);
+    };
+    modalInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') modalConfirm.click();
+      if (e.key === 'Escape') closeModal(null);
+    });
+    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(null); });
 
     // ── Home ───────────────────────────────────────────────────────
     function renderHome() {
+      closeDropdown();
       cardsGrid.innerHTML = '';
 
       if (cards.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'empty-state';
-        empty.innerHTML = 'No boards yet.<br>Tap <strong>+</strong> to create your first one.';
-        cardsGrid.appendChild(empty);
+        const hint = document.createElement('div');
+        hint.className = 'empty-hint';
+        hint.innerHTML = 'No boards yet.<br>Tap <strong style="color:#555">+</strong> to create one.';
+        cardsGrid.appendChild(hint);
       } else {
         cards.forEach(card => {
+          const wrap = document.createElement('div');
+          wrap.className = 'card-wrap';
+
           const el = document.createElement('div');
           el.className = 'card';
           el.innerHTML = `
             <div class="card-date">${formatDate(card.updatedAt)}</div>
-            <div class="card-preview">${escHtml(card.content) || '<span style="color:#333">Empty board</span>'}</div>
-            <div class="card-footer">
+            <div class="card-preview">${escHtml(card.content) || '<span style="color:#2e2e33">Empty</span>'}</div>
+            <div class="card-bottom">
               <span class="card-chars">${card.content.length.toLocaleString()} chars</span>
-              <button class="card-delete" onclick="deleteCard(event,'${card.id}')">✕</button>
+              <button class="card-menu-btn" title="Options">···</button>
             </div>`;
+
+          el.querySelector('.card-menu-btn').addEventListener('click', e => {
+            e.stopPropagation();
+            showDropdown(e.currentTarget, card.id);
+          });
+
           el.addEventListener('click', () => openCard(card.id));
-          cardsGrid.appendChild(el);
+
+          const nameEl = document.createElement('div');
+          nameEl.className = 'card-name';
+          nameEl.textContent = card.name || 'Untitled';
+
+          wrap.appendChild(el);
+          wrap.appendChild(nameEl);
+          cardsGrid.appendChild(wrap);
         });
       }
 
-      // Always add the + card last
-      const newEl = document.createElement('button');
-      newEl.className = 'card-new';
-      newEl.innerHTML = '<div class="card-new-icon">+</div><div>new board</div>';
-      newEl.onclick = createCard;
-      cardsGrid.appendChild(newEl);
+      // + card
+      const newBtn = document.createElement('button');
+      newBtn.className = 'card-new';
+      newBtn.innerHTML = '<div class="card-new-plus">+</div><div>new board</div>';
+      newBtn.onclick = createCard;
+      cardsGrid.appendChild(newBtn);
     }
 
     function goHome() {
@@ -563,48 +654,86 @@
       renderHome();
     }
 
+    // ── Dropdown ───────────────────────────────────────────────────
+    function showDropdown(anchor, cardId) {
+      closeDropdown();
+
+      const menu = document.createElement('div');
+      menu.className = 'dropdown';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'dropdown-item';
+      renameBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Rename`;
+      renameBtn.onclick = () => { closeDropdown(); renameCard(cardId); };
+
+      const divider = document.createElement('div');
+      divider.style.cssText = 'height:1px;background:rgba(255,255,255,0.06);margin:2px 0;';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'dropdown-item danger';
+      deleteBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Remove`;
+      deleteBtn.onclick = () => { closeDropdown(); deleteCard(cardId); };
+
+      menu.appendChild(renameBtn);
+      menu.appendChild(divider);
+      menu.appendChild(deleteBtn);
+      document.body.appendChild(menu);
+      activeDropdown = menu;
+
+      const rect = anchor.getBoundingClientRect();
+      menu.style.top  = (rect.bottom + 4) + 'px';
+      menu.style.left = Math.min(rect.left, window.innerWidth - 140) + 'px';
+    }
+
+    function closeDropdown() {
+      if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; }
+    }
+
+    document.addEventListener('click', closeDropdown);
+
     // ── Card CRUD ──────────────────────────────────────────────────
-    function createCard() {
-      const card = {
-        id: 'card_' + Date.now(),
-        content: '',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
+    async function createCard() {
+      const name = await openModal('Name your board', 'e.g. Work notes, Shopping list…', 'Create');
+      if (!name) return;
+      const card = { id: 'c' + Date.now(), name, content: '', createdAt: Date.now(), updatedAt: Date.now() };
       cards.unshift(card);
       saveCards(cards);
       openCard(card.id);
     }
 
     function openCard(id) {
-      currentCardId = id;
+      currentId = id;
       const card = cards.find(c => c.id === id);
       if (!card) return;
-
-      // Reset editor state
       board.value = card.content;
-      hist = [card.content];
-      idx = 0;
-      refreshButtons();
-      updateStats();
-
+      hist = [card.content]; histIdx = 0;
+      refreshBtns(); updateStats();
+      editorTitle.textContent = card.name;
       showScreen('editor');
       board.focus();
     }
 
     function saveCard() {
-      if (!currentCardId) return;
-      const card = cards.find(c => c.id === currentCardId);
+      const card = cards.find(c => c.id === currentId);
       if (!card) return;
       card.content = board.value;
       card.updatedAt = Date.now();
       saveCards(cards);
       showToast('✓ Saved');
-      setTimeout(() => goHome(), 600);
+      setTimeout(goHome, 500);
     }
 
-    function deleteCard(e, id) {
-      e.stopPropagation();
+    async function renameCard(id) {
+      const card = cards.find(c => c.id === id);
+      if (!card) return;
+      const name = await openModal('Rename board', 'New name…', 'Rename', card.name);
+      if (!name) return;
+      card.name = name;
+      saveCards(cards);
+      renderHome();
+    }
+
+    function deleteCard(id) {
       cards = cards.filter(c => c.id !== id);
       saveCards(cards);
       renderHome();
@@ -618,17 +747,15 @@
       debounce = setTimeout(() => snapshot(board.value), 400);
     });
 
-    function snapshot(value) {
-      hist = hist.slice(0, idx + 1);
-      if (hist[idx] === value) return;
-      hist.push(value);
-      idx = hist.length - 1;
-      refreshButtons();
+    function snapshot(v) {
+      hist = hist.slice(0, histIdx + 1);
+      if (hist[histIdx] === v) return;
+      hist.push(v); histIdx = hist.length - 1; refreshBtns();
     }
 
-    function refreshButtons() {
-      undoBtn.disabled = idx <= 0;
-      redoBtn.disabled = idx >= hist.length - 1;
+    function refreshBtns() {
+      undoBtn.disabled = histIdx <= 0;
+      redoBtn.disabled = histIdx >= hist.length - 1;
     }
 
     function updateStats() {
@@ -639,136 +766,107 @@
 
     function applyHist() {
       clearTimeout(debounce);
-      isApplying = true;
-      board.value = hist[idx];
-      isApplying = false;
-      updateStats();
-      refreshButtons();
+      isApplying = true; board.value = hist[histIdx]; isApplying = false;
+      updateStats(); refreshBtns();
     }
 
     function doUndo() {
-      if (idx <= 0) return;
+      if (histIdx <= 0) return;
       clearTimeout(debounce);
-      if (hist[idx] !== board.value) snapshot(board.value);
-      idx--;
-      applyHist();
-      showToast('↩ Undone');
+      if (hist[histIdx] !== board.value) snapshot(board.value);
+      histIdx--; applyHist(); showToast('↩ Undone');
     }
 
     function doRedo() {
-      if (idx >= hist.length - 1) return;
-      idx++;
-      applyHist();
-      showToast('↪ Redone');
+      if (histIdx >= hist.length - 1) return;
+      histIdx++; applyHist(); showToast('↪ Redone');
     }
 
     function clearBoard() {
       if (!board.value) return;
-      snapshot(board.value);
-      board.value = '';
-      snapshot('');
-      updateStats();
-      showToast('Cleared');
+      snapshot(board.value); board.value = ''; snapshot(''); updateStats(); showToast('Cleared');
     }
 
     async function pasteFromClipboard() {
       try {
         const text = await navigator.clipboard.readText();
-        if (!text) { showToast('Clipboard is empty', 'error'); return; }
+        if (!text) { showToast('Clipboard empty', 'error'); return; }
         const s = board.selectionStart, e = board.selectionEnd;
         board.value = board.value.slice(0, s) + text + board.value.slice(e);
         board.selectionStart = board.selectionEnd = s + text.length;
-        snapshot(board.value);
-        updateStats();
+        snapshot(board.value); updateStats();
         showToast('↓ Pasted ' + text.length.toLocaleString() + ' chars');
-      } catch {
-        board.focus();
-        showToast('Press Ctrl+V to paste', 'error');
-      }
+      } catch { board.focus(); showToast('Press Ctrl+V to paste', 'error'); }
     }
 
     async function copyToClipboard() {
       if (!board.value) { showToast('Nothing to copy', 'error'); return; }
-      try {
-        await navigator.clipboard.writeText(board.value);
-        showToast('↑ Copied ' + board.value.length.toLocaleString() + ' chars');
-      } catch {
-        board.select();
-        document.execCommand('copy');
-        showToast('Copied!');
-      }
+      try { await navigator.clipboard.writeText(board.value); showToast('↑ Copied ' + board.value.length.toLocaleString() + ' chars'); }
+      catch { board.select(); document.execCommand('copy'); showToast('Copied!'); }
     }
 
-    // ── Voice ──────────────────────────────────────────────────────
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
+    // ── Voice (simple, one session, no restart) ────────────────────
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recog = null;
     let isListening = false;
 
-    if (!SpeechRecognition) {
-      micBtn.disabled = true;
-      micBtn.title = 'Not supported in this browser';
-    }
+    if (!SR) { micBtn.disabled = true; micBtn.title = 'Not supported in this browser'; }
 
     function toggleVoice() {
-      if (!SpeechRecognition) { showToast('Not supported', 'error'); return; }
-      if (isListening) { stopVoice(); showToast('Stopped recording'); return; }
-      startVoice();
-    }
-
-    function startVoice() {
-      if (isListening) return;
-      isListening = true;
-      micBtn.classList.add('listening');
-      showToast('🎤 Listening… tap mic to stop');
-
-      let committed = board.value;
-
-      function newSession() {
-        if (!isListening) return;
-        recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = false;
-        recognition.interimResults = true;
-
-        recognition.onresult = (e) => {
-          let interim = '', final = '';
-          for (let i = 0; i < e.results.length; i++) {
-            if (e.results[i].isFinal) final += e.results[i][0].transcript;
-            else interim += e.results[i][0].transcript;
-          }
-          if (final) committed += final;
-          board.value = committed + interim;
-          board.selectionStart = board.selectionEnd = board.value.length;
-          updateStats();
-        };
-
-        recognition.onerror = (e) => {
-          if (e.error === 'no-speech') return;
-          if (e.error === 'aborted')   return;
-          stopVoice();
-          showToast('Mic error: ' + e.error, 'error');
-        };
-
-        recognition.onend = () => {
-          if (isListening) {
-            setTimeout(newSession, 80); // restart to keep mic open
-          } else {
-            snapshot(board.value);
-          }
-        };
-
-        try { recognition.start(); } catch(e) { stopVoice(); }
+      if (!SR) { showToast('Not supported', 'error'); return; }
+      if (isListening) {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        if (recog) { recog.abort(); recog = null; }
+        snapshot(board.value);
+        showToast('Stopped');
+        return;
       }
 
-      newSession();
+      isListening = true;
+      micBtn.classList.add('listening');
+      showToast('🎤 Listening… tap to stop');
+
+      const base = board.value;
+      recog = new SR();
+      recog.lang = 'en-US';
+      recog.continuous = false;
+      recog.interimResults = true;
+
+      recog.onresult = (e) => {
+        let final = '', interim = '';
+        for (let i = 0; i < e.results.length; i++) {
+          if (e.results[i].isFinal) final += e.results[i][0].transcript;
+          else interim += e.results[i][0].transcript;
+        }
+        board.value = base + final + interim;
+        board.selectionStart = board.selectionEnd = board.value.length;
+        updateStats();
+      };
+
+      recog.onerror = (e) => {
+        if (e.error === 'no-speech' || e.error === 'aborted') return;
+        isListening = false;
+        micBtn.classList.remove('listening');
+        recog = null;
+        showToast('Mic: ' + e.error, 'error');
+      };
+
+      recog.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        recog = null;
+        snapshot(board.value);
+      };
+
+      recog.start();
     }
 
     function stopVoice() {
       if (!isListening) return;
       isListening = false;
       micBtn.classList.remove('listening');
-      if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
-      snapshot(board.value);
+      if (recog) { try { recog.abort(); } catch(e) {} recog = null; }
     }
 
     // ── Keyboard shortcuts ─────────────────────────────────────────
@@ -785,18 +883,15 @@
       clearTimeout(toastTimer);
       toast.textContent = msg;
       toast.className = 'toast ' + type + ' show';
-      toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2200);
+      toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2000);
     }
 
-    // ── Helpers ────────────────────────────────────────────────────
-    function escHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
+    // ── Utils ──────────────────────────────────────────────────────
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function formatDate(ts) {
       const d = new Date(ts);
-      return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
-        + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+      return d.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})
+        + ' · ' + d.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
     }
 
     // ── Init ───────────────────────────────────────────────────────
