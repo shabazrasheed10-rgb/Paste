@@ -512,7 +512,6 @@
       }
 
       if (isListening) {
-        // Stop
         isListening = false;
         recognition.stop();
         micBtn.classList.remove('listening');
@@ -520,32 +519,25 @@
         return;
       }
 
-      // Start
+      // Start fresh
       recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
-      recognition.continuous = true;
+      recognition.continuous = true;  // stays open, no restart needed
       recognition.interimResults = true;
 
       let finalText = board.value;
-
-      recognition.onstart = () => {
-        isListening = true;
-        micBtn.classList.add('listening');
-        showToast('🎤 Listening… tap mic to stop');
-      };
+      isListening = true;
+      micBtn.classList.add('listening');
+      showToast('🎤 Listening… tap mic to stop');
 
       recognition.onresult = (e) => {
-        let interimText = '';
-        let newFinal = '';
+        let interim = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            newFinal += e.results[i][0].transcript;
-          } else {
-            interimText += e.results[i][0].transcript;
-          }
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalText += t;
+          else interim += t;
         }
-        if (newFinal) finalText += newFinal;
-        board.value = finalText + interimText;
+        board.value = finalText + interim;
         board.selectionStart = board.selectionEnd = board.value.length;
         saveToStorage(board.value);
         updateStats();
@@ -559,11 +551,10 @@
       };
 
       recognition.onend = () => {
-        // Auto-restart if user hasn't stopped manually
         if (isListening) {
+          // Only restart if continuous mode ended unexpectedly
           try { recognition.start(); } catch(e) {}
         } else {
-          micBtn.classList.remove('listening');
           snapshot(board.value);
         }
       };
