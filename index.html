@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PasteBoard</title>
-    <link rel="manifest" href="manifest.json">
+   <link rel="manifest" href="manifest.json">
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -146,6 +147,29 @@
     }
 
     .sep { width: 1px; height: 16px; background: var(--border); }
+
+    .lang-select {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      padding: 0.22rem 0.4rem;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: none;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .lang-select:hover, .lang-select:focus {
+      color: var(--text);
+      border-color: #555;
+    }
+
+    .lang-select option {
+      background: #1e1e21;
+      color: var(--text);
+    }
 
     .textarea-wrap {
       flex: 1;
@@ -308,6 +332,18 @@
         <div class="toolbar-right">
 <button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
           <button class="tool-btn" onclick="copyToClipboard()">↑ copy all</button>
+          <select class="lang-select" id="langSelect" title="Voice language">
+            <option value="en-US">EN</option>
+            <option value="ar-SA">AR</option>
+            <option value="tr-TR">TR</option>
+            <option value="fa-IR">FA</option>
+            <option value="ku-IQ">KU</option>
+            <option value="fr-FR">FR</option>
+            <option value="de-DE">DE</option>
+            <option value="es-ES">ES</option>
+            <option value="zh-CN">ZH</option>
+            <option value="ru-RU">RU</option>
+          </select>
           <div class="sep"></div>
           <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
         </div>
@@ -512,52 +548,73 @@
       }
 
       if (isListening) {
+        // User tapped to stop
         isListening = false;
-        recognition.abort();
+        if (recognition) recognition.abort();
         micBtn.classList.remove('listening');
         showToast('Stopped recording');
         snapshot(board.value);
         return;
       }
 
-      recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.continuous = false;  // one clean session, no overlaps
-      recognition.interimResults = true;
-
-      const textBefore = board.value;  // snapshot of text before we started
       isListening = true;
       micBtn.classList.add('listening');
       showToast('🎤 Listening… tap mic to stop');
 
-      recognition.onresult = (e) => {
-        let interim = '';
-        let final = '';
-        for (let i = 0; i < e.results.length; i++) {
-          if (e.results[i].isFinal) final += e.results[i][0].transcript;
-          else interim += e.results[i][0].transcript;
-        }
-        board.value = textBefore + final + interim;
-        board.selectionStart = board.selectionEnd = board.value.length;
-        saveToStorage(board.value);
-        updateStats();
-      };
+      // Capture base text once at start — interim results replace the tail
+      let committedText = board.value;
+      let isStarting = false;
 
-      recognition.onerror = (e) => {
-        if (e.error === 'no-speech') return;
-        isListening = false;
-        micBtn.classList.remove('listening');
-        showToast('Mic error: ' + e.error, 'error');
-      };
+      function startSession() {
+        if (!isListening || isStarting) return;
+        isStarting = true;
 
-      recognition.onend = () => {
-        // Only runs once — no restart, no loop
-        isListening = false;
-        micBtn.classList.remove('listening');
-        snapshot(board.value);
-      };
+        recognition = new SpeechRecognition();
+        recognition.lang = document.getElementById('langSelect').value;
+        recognition.continuous = false;
+        recognition.interimResults = true;
 
-      recognition.start();
+        recognition.onresult = (e) => {
+          let interim = '';
+          let final = '';
+          for (let i = 0; i < e.results.length; i++) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          if (final) committedText += final;
+          board.value = committedText + interim;
+          board.selectionStart = board.selectionEnd = board.value.length;
+          saveToStorage(board.value);
+          updateStats();
+        };
+
+        recognition.onerror = (e) => {
+          isStarting = false;
+          if (e.error === 'no-speech') {
+            // Silence — just restart quietly
+            if (isListening) setTimeout(startSession, 100);
+            return;
+          }
+          if (e.error === 'aborted') return; // user stopped, ignore
+          isListening = false;
+          micBtn.classList.remove('listening');
+          showToast('Mic error: ' + e.error, 'error');
+        };
+
+        recognition.onend = () => {
+          isStarting = false;
+          if (isListening) {
+            // Auto-restart to keep mic open
+            setTimeout(startSession, 100);
+          } else {
+            snapshot(board.value);
+          }
+        };
+
+        recognition.start();
+      }
+
+      startSession();
     }
 
     // ── Keyboard shortcuts ─────────────────────────────────────────
