@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PasteBoard</title>
    <link rel="manifest" href="manifest.json">
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #0e0e0f;
       --surface: #161618;
+      --surface2: #1c1c1f;
       --border: #2a2a2e;
       --accent: #e8ff47;
-      --accent-dim: rgba(232, 255, 71, 0.12);
+      --accent-dim: rgba(232,255,71,0.1);
       --text: #f0f0f0;
       --muted: #666;
       --success: #47ffb2;
@@ -27,13 +27,9 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.2rem 1rem 1rem;
+      min-height: 100vh;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     body::before {
@@ -41,84 +37,208 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(232,255,71,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,255,71,0.025) 1px, transparent 1px);
       background-size: 40px 40px;
       pointer-events: none;
       z-index: 0;
     }
 
-    .container {
+    /* ── SCREENS ── */
+    .screen { display: none; position: relative; z-index: 1; }
+    .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── HOME SCREEN ── */
+    #homeScreen {
+      padding: 2rem 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
       width: 100%;
-      max-width: 1000px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      z-index: 1;
     }
 
     header {
       display: flex;
       align-items: baseline;
       gap: 1rem;
-      margin-bottom: 0.9rem;
-      flex-shrink: 0;
+      margin-bottom: 2.5rem;
     }
 
     .logo {
       font-family: 'Syne', sans-serif;
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 800;
       letter-spacing: -0.02em;
-      color: var(--text);
     }
 
     .logo span { color: var(--accent); }
 
     .tagline {
       color: var(--muted);
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
+    }
+
+    /* Cards grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
     }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(232,255,71,0.04), 0 24px 60px rgba(0,0,0,0.5);
-      flex: 1;
+      border-radius: 6px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      min-height: 160px;
       display: flex;
       flex-direction: column;
-      min-height: 0;
     }
 
-    .toolbar {
+    .card:hover {
+      border-color: #444;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .card-date {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.6rem;
+    }
+
+    .card-preview {
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #aaa;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      word-break: break-all;
+    }
+
+    .card-footer {
+      margin-top: 0.75rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.6rem 1.2rem;
+    }
+
+    .card-chars {
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    .card-delete {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      transition: color 0.15s, background 0.15s;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .card-delete:hover {
+      color: var(--error);
+      background: rgba(255,107,107,0.08);
+    }
+
+    /* New card button */
+    .card-new {
+      background: transparent;
+      border: 1px dashed #333;
+      border-radius: 6px;
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card-new:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .card-new-icon {
+      font-size: 2rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 2;
+    }
+
+    /* ── EDITOR SCREEN ── */
+    #editorScreen {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1.2rem;
       border-bottom: 1px solid var(--border);
       background: #111113;
       flex-shrink: 0;
+      gap: 0.75rem;
     }
 
-    .toolbar-left { display: flex; align-items: center; gap: 0.5rem; }
+    .editor-toolbar-left { display: flex; align-items: center; gap: 0.75rem; }
+    .editor-toolbar-right { display: flex; align-items: center; gap: 0.6rem; }
 
-    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+    .back-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 0.3rem 0.7rem;
+      border-radius: 3px;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
 
-    .char-count {
+    .back-btn:hover {
+      color: var(--text);
+      border-color: #666;
+    }
+
+    .editor-stats {
       font-size: 0.68rem;
       color: var(--muted);
-      letter-spacing: 0.05em;
-      margin-left: 0.75rem;
     }
 
-    .char-count span { color: var(--accent); }
-
-    .toolbar-right { display: flex; align-items: center; gap: 0.5rem; }
+    .editor-stats span { color: var(--accent); }
 
     .tool-btn {
       background: none;
@@ -129,9 +249,9 @@
       cursor: pointer;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      padding: 0.22rem 0.55rem;
+      padding: 0.25rem 0.6rem;
       border-radius: 3px;
-      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      transition: all 0.15s;
     }
 
     .tool-btn:hover {
@@ -148,35 +268,6 @@
 
     .sep { width: 1px; height: 16px; background: var(--border); }
 
-    .lang-select {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.68rem;
-      padding: 0.22rem 0.4rem;
-      border-radius: 3px;
-      cursor: pointer;
-      outline: none;
-      transition: color 0.15s, border-color 0.15s;
-    }
-
-    .lang-select:hover, .lang-select:focus {
-      color: var(--text);
-      border-color: #555;
-    }
-
-    .lang-select option {
-      background: #1e1e21;
-      color: var(--text);
-    }
-
-    .textarea-wrap {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-    }
-
     textarea {
       flex: 1;
       width: 100%;
@@ -190,18 +281,15 @@
       padding: 1.4rem 1.5rem;
       resize: none;
       caret-color: var(--accent);
-      transition: background 0.2s;
-      overflow-y: auto;
     }
 
-    textarea::placeholder { color: #2e2e33; }
+    textarea::placeholder { color: #2a2a2e; }
     textarea:focus { background: #17171a; }
-
     textarea::-webkit-scrollbar { width: 6px; }
     textarea::-webkit-scrollbar-track { background: transparent; }
     textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    textarea::-webkit-scrollbar-thumb:hover { background: #3a3a3e; }
 
+    /* Bottom action bar */
     .actions {
       display: flex;
       gap: 0.75rem;
@@ -216,23 +304,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.55rem;
+      gap: 0.5rem;
       padding: 0.8rem 1.5rem;
       border: 1px solid var(--border);
       border-radius: 3px;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-      overflow: hidden;
+      transition: all 0.15s;
     }
 
     .btn:active:not(:disabled) { transform: scale(0.98); }
-
     .btn:disabled { opacity: 0.28; cursor: not-allowed; }
 
     .btn-undo {
@@ -240,55 +325,58 @@
       color: var(--text);
       border-color: var(--border);
     }
-
     .btn-undo:hover:not(:disabled) {
-      border-color: #888;
-      color: #fff;
-      background: rgba(255,255,255,0.05);
-    }
-
-    .btn-redo {
-      background: var(--accent);
-      color: #0a0a0a;
-      border-color: var(--accent);
-    }
-
-    .btn-redo:hover:not(:disabled) {
-      background: #f2ff6a;
-      box-shadow: 0 0 20px rgba(232,255,71,0.3), 0 0 40px rgba(232,255,71,0.1);
-    }
-
-    .icon { width: 15px; height: 15px; flex-shrink: 0; }
-
-    .btn-mic {
-      flex: 0 0 auto;
-      width: 54px;
-      background: transparent;
-      color: var(--muted);
-      border-color: var(--border);
-      padding: 0.8rem;
-      border-radius: 3px;
-      position: relative;
-    }
-
-    .btn-mic:hover:not(:disabled) {
-      color: var(--text);
       border-color: #888;
       background: rgba(255,255,255,0.04);
     }
 
+    .btn-mic {
+      flex: 0 0 54px;
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+      padding: 0.8rem;
+    }
+    .btn-mic:hover {
+      color: var(--text);
+      border-color: #888;
+    }
     .btn-mic.listening {
-      color: #ff6b6b;
-      border-color: #ff6b6b;
+      color: var(--error);
+      border-color: var(--error);
       background: rgba(255,107,107,0.08);
       animation: pulse-mic 1.2s ease-in-out infinite;
     }
 
     @keyframes pulse-mic {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.4); }
-      50%       { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.4); }
+      50%      { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
     }
 
+    .btn-redo {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-redo:hover:not(:disabled) {
+      border-color: #888;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-save {
+      background: var(--accent);
+      color: #0a0a0a;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .btn-save:hover {
+      background: #f2ff6a;
+      box-shadow: 0 0 20px rgba(232,255,71,0.3);
+    }
+
+    .icon { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* Toast */
     .toast {
       position: fixed;
       bottom: 1.5rem;
@@ -301,125 +389,223 @@
       font-size: 0.75rem;
       padding: 0.55rem 1.1rem;
       border-radius: 3px;
-      z-index: 100;
+      z-index: 999;
       opacity: 0;
       transition: opacity 0.18s, transform 0.18s;
       pointer-events: none;
       white-space: nowrap;
     }
-
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast.success { border-color: var(--success); color: var(--success); }
-    .toast.error   { border-color: var(--error);   color: var(--error); }
+    .toast.error   { border-color: var(--error); color: var(--error); }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <!-- ── HOME SCREEN ── -->
+  <div id="homeScreen" class="screen active">
     <header>
       <div class="logo">Paste<span>Board</span></div>
-      <div class="tagline">// drop anything here</div>
+      <div class="tagline">// your boards</div>
     </header>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
 
-    <div class="card">
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-          <div class="char-count">
-            <span id="charNum">0</span> chars &nbsp;·&nbsp; <span id="lineNum">0</span> lines
-          </div>
-        </div>
-        <div class="toolbar-right">
-<button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
-          <button class="tool-btn" onclick="copyToClipboard()">↑ copy all</button>
-          <select class="lang-select" id="langSelect" title="Voice language">
-            <option value="en-US">EN</option>
-            <option value="ar-SA">AR</option>
-            <option value="tr-TR">TR</option>
-            <option value="fa-IR">FA</option>
-            <option value="ku-IQ">KU</option>
-            <option value="fr-FR">FR</option>
-            <option value="de-DE">DE</option>
-            <option value="es-ES">ES</option>
-            <option value="zh-CN">ZH</option>
-            <option value="ru-RU">RU</option>
-          </select>
-          <div class="sep"></div>
-          <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
+  <!-- ── EDITOR SCREEN ── -->
+  <div id="editorScreen" class="screen">
+    <div class="editor-toolbar">
+      <div class="editor-toolbar-left">
+        <button class="back-btn" onclick="goHome()">← back</button>
+        <div class="editor-stats">
+          <span id="charNum">0</span> chars &nbsp;·&nbsp; <span id="lineNum">0</span> lines
         </div>
       </div>
-
-      <div class="textarea-wrap">
-        <textarea
-          id="board"
-          placeholder="Paste your text, code, or anything long here…"
-          spellcheck="false"
-          autocorrect="off"
-          autocomplete="off"
-        ></textarea>
+      <div class="editor-toolbar-right">
+        <button class="tool-btn" onclick="pasteFromClipboard()">↓ paste</button>
+        <button class="tool-btn" onclick="copyToClipboard()">↑ copy</button>
+        <div class="sep"></div>
+        <button class="tool-btn clear" onclick="clearBoard()">✕ clear</button>
       </div>
+    </div>
 
-      <div class="actions">
-        <button class="btn btn-undo" id="undoBtn" onclick="doUndo()" disabled>
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 14 4 9 9 4"/>
-            <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
-          </svg>
-          Undo
-        </button>
+    <textarea
+      id="board"
+      placeholder="Type, paste, or use the mic…"
+      spellcheck="false"
+      autocorrect="off"
+      autocomplete="off"
+    ></textarea>
 
-        <button class="btn btn-mic" id="micBtn" onclick="toggleVoice()" title="Voice to text">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="2" width="6" height="11" rx="3"/>
-            <path d="M5 10a7 7 0 0 0 14 0"/>
-            <line x1="12" y1="19" x2="12" y2="22"/>
-            <line x1="8" y1="22" x2="16" y2="22"/>
-          </svg>
-        </button>
+    <div class="actions">
+      <button class="btn btn-undo" id="undoBtn" onclick="doUndo()" disabled>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+        </svg>
+        Undo
+      </button>
 
-        <button class="btn btn-redo" id="redoBtn" onclick="doRedo()" disabled>
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 14 20 9 15 4"/>
-            <path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
-          </svg>
-          Redo
-        </button>
-      </div>
+      <button class="btn btn-mic" id="micBtn" onclick="toggleVoice()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </button>
+
+      <button class="btn btn-redo" id="redoBtn" onclick="doRedo()" disabled>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
+        </svg>
+        Redo
+      </button>
+
+      <button class="btn btn-save" onclick="saveCard()">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save
+      </button>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    const board   = document.getElementById('board');
-    const charNum = document.getElementById('charNum');
-    const lineNum = document.getElementById('lineNum');
-    const undoBtn = document.getElementById('undoBtn');
-    const redoBtn = document.getElementById('redoBtn');
-    const toast   = document.getElementById('toast');
+    // ── Storage ────────────────────────────────────────────────────
+    const STORE_KEY = 'pasteboard_cards';
 
-    // ── Persist to localStorage ────────────────────────────────────
-    const STORAGE_KEY = 'pasteboard_content';
-
-    function saveToStorage(value) {
-      try { localStorage.setItem(STORAGE_KEY, value); } catch {}
+    function loadCards() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+      catch { return []; }
     }
 
-    function loadFromStorage() {
-      try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; }
+    function saveCards(cards) {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(cards)); }
+      catch {}
     }
 
-    // Load saved content on startup
-    const saved = loadFromStorage();
-    if (saved) {
-      board.value = saved;
+    // ── State ──────────────────────────────────────────────────────
+    let cards = loadCards();
+    let currentCardId = null;
+
+    // Editor history
+    let hist = [''], idx = 0, isApplying = false;
+    let debounce;
+
+    // ── DOM refs ───────────────────────────────────────────────────
+    const homeScreen   = document.getElementById('homeScreen');
+    const editorScreen = document.getElementById('editorScreen');
+    const board        = document.getElementById('board');
+    const charNum      = document.getElementById('charNum');
+    const lineNum      = document.getElementById('lineNum');
+    const undoBtn      = document.getElementById('undoBtn');
+    const redoBtn      = document.getElementById('redoBtn');
+    const micBtn       = document.getElementById('micBtn');
+    const cardsGrid    = document.getElementById('cardsGrid');
+    const toast        = document.getElementById('toast');
+
+    // ── Screen routing ─────────────────────────────────────────────
+    function showScreen(name) {
+      homeScreen.classList.toggle('active', name === 'home');
+      editorScreen.classList.toggle('active', name === 'editor');
+    }
+
+    // ── Home ───────────────────────────────────────────────────────
+    function renderHome() {
+      cardsGrid.innerHTML = '';
+
+      if (cards.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = 'No boards yet.<br>Tap <strong>+</strong> to create your first one.';
+        cardsGrid.appendChild(empty);
+      } else {
+        cards.forEach(card => {
+          const el = document.createElement('div');
+          el.className = 'card';
+          el.innerHTML = `
+            <div class="card-date">${formatDate(card.updatedAt)}</div>
+            <div class="card-preview">${escHtml(card.content) || '<span style="color:#333">Empty board</span>'}</div>
+            <div class="card-footer">
+              <span class="card-chars">${card.content.length.toLocaleString()} chars</span>
+              <button class="card-delete" onclick="deleteCard(event,'${card.id}')">✕</button>
+            </div>`;
+          el.addEventListener('click', () => openCard(card.id));
+          cardsGrid.appendChild(el);
+        });
+      }
+
+      // Always add the + card last
+      const newEl = document.createElement('button');
+      newEl.className = 'card-new';
+      newEl.innerHTML = '<div class="card-new-icon">+</div><div>new board</div>';
+      newEl.onclick = createCard;
+      cardsGrid.appendChild(newEl);
+    }
+
+    function goHome() {
+      stopVoice();
+      showScreen('home');
+      renderHome();
+    }
+
+    // ── Card CRUD ──────────────────────────────────────────────────
+    function createCard() {
+      const card = {
+        id: 'card_' + Date.now(),
+        content: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      cards.unshift(card);
+      saveCards(cards);
+      openCard(card.id);
+    }
+
+    function openCard(id) {
+      currentCardId = id;
+      const card = cards.find(c => c.id === id);
+      if (!card) return;
+
+      // Reset editor state
+      board.value = card.content;
+      hist = [card.content];
+      idx = 0;
+      refreshButtons();
       updateStats();
+
+      showScreen('editor');
+      board.focus();
     }
 
-    // ── History ────────────────────────────────────────────────────
-    let hist = [saved];
-    let idx  = 0;
-    let isApplying = false;
+    function saveCard() {
+      if (!currentCardId) return;
+      const card = cards.find(c => c.id === currentCardId);
+      if (!card) return;
+      card.content = board.value;
+      card.updatedAt = Date.now();
+      saveCards(cards);
+      showToast('✓ Saved');
+      setTimeout(() => goHome(), 600);
+    }
+
+    function deleteCard(e, id) {
+      e.stopPropagation();
+      cards = cards.filter(c => c.id !== id);
+      saveCards(cards);
+      renderHome();
+    }
+
+    // ── Editor ─────────────────────────────────────────────────────
+    board.addEventListener('input', () => {
+      if (isApplying) return;
+      updateStats();
+      clearTimeout(debounce);
+      debounce = setTimeout(() => snapshot(board.value), 400);
+    });
 
     function snapshot(value) {
       hist = hist.slice(0, idx + 1);
@@ -427,7 +613,6 @@
       hist.push(value);
       idx = hist.length - 1;
       refreshButtons();
-      saveToStorage(value);
     }
 
     function refreshButtons() {
@@ -441,45 +626,40 @@
       lineNum.textContent = v ? v.split('\n').length.toLocaleString() : '0';
     }
 
-    // Debounced snapshot on every keystroke
-    let debounce;
-    board.addEventListener('input', () => {
-      if (isApplying) return;
-      updateStats();
-      clearTimeout(debounce);
-      debounce = setTimeout(() => snapshot(board.value), 400);
-    });
-
-    // ── Undo ───────────────────────────────────────────────────────
-    function doUndo() {
-      if (idx <= 0) return;
-      // Flush any pending unsaved state first
-      clearTimeout(debounce);
-      if (hist[idx] !== board.value) snapshot(board.value);
-      idx--;
-      apply();
-      showToast('↩ Undone');
-    }
-
-    // ── Redo ───────────────────────────────────────────────────────
-    function doRedo() {
-      if (idx >= hist.length - 1) return;
-      idx++;
-      apply();
-      showToast('↪ Redone');
-    }
-
-    function apply() {
+    function applyHist() {
       clearTimeout(debounce);
       isApplying = true;
       board.value = hist[idx];
       isApplying = false;
       updateStats();
       refreshButtons();
-      saveToStorage(hist[idx]);
     }
 
-    // ── Paste from clipboard ───────────────────────────────────────
+    function doUndo() {
+      if (idx <= 0) return;
+      clearTimeout(debounce);
+      if (hist[idx] !== board.value) snapshot(board.value);
+      idx--;
+      applyHist();
+      showToast('↩ Undone');
+    }
+
+    function doRedo() {
+      if (idx >= hist.length - 1) return;
+      idx++;
+      applyHist();
+      showToast('↪ Redone');
+    }
+
+    function clearBoard() {
+      if (!board.value) return;
+      snapshot(board.value);
+      board.value = '';
+      snapshot('');
+      updateStats();
+      showToast('Cleared');
+    }
+
     async function pasteFromClipboard() {
       try {
         const text = await navigator.clipboard.readText();
@@ -490,14 +670,12 @@
         snapshot(board.value);
         updateStats();
         showToast('↓ Pasted ' + text.length.toLocaleString() + ' chars');
-        board.scrollTop = board.scrollHeight;
       } catch {
         board.focus();
-        showToast('Press Ctrl+V / Cmd+V to paste', 'error');
+        showToast('Press Ctrl+V to paste', 'error');
       }
     }
 
-    // ── Copy all ───────────────────────────────────────────────────
     async function copyToClipboard() {
       if (!board.value) { showToast('Nothing to copy', 'error'); return; }
       try {
@@ -510,16 +688,85 @@
       }
     }
 
-    // ── Clear ──────────────────────────────────────────────────────
-    function clearBoard() {
-      if (!board.value) return;
-      snapshot(board.value);
-      board.value = '';
-      snapshot('');
-      updateStats();
-      showToast('Board cleared');
-      board.focus();
+    // ── Voice ──────────────────────────────────────────────────────
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (!SpeechRecognition) {
+      micBtn.disabled = true;
+      micBtn.title = 'Not supported in this browser';
     }
+
+    function toggleVoice() {
+      if (!SpeechRecognition) { showToast('Not supported', 'error'); return; }
+      if (isListening) { stopVoice(); showToast('Stopped recording'); return; }
+      startVoice();
+    }
+
+    function startVoice() {
+      if (isListening) return;
+      isListening = true;
+      micBtn.classList.add('listening');
+      showToast('🎤 Listening… tap mic to stop');
+
+      let committed = board.value;
+
+      function newSession() {
+        if (!isListening) return;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onresult = (e) => {
+          let interim = '', final = '';
+          for (let i = 0; i < e.results.length; i++) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          if (final) committed += final;
+          board.value = committed + interim;
+          board.selectionStart = board.selectionEnd = board.value.length;
+          updateStats();
+        };
+
+        recognition.onerror = (e) => {
+          if (e.error === 'no-speech') return;
+          if (e.error === 'aborted')   return;
+          stopVoice();
+          showToast('Mic error: ' + e.error, 'error');
+        };
+
+        recognition.onend = () => {
+          if (isListening) {
+            setTimeout(newSession, 80); // restart to keep mic open
+          } else {
+            snapshot(board.value);
+          }
+        };
+
+        try { recognition.start(); } catch(e) { stopVoice(); }
+      }
+
+      newSession();
+    }
+
+    function stopVoice() {
+      if (!isListening) return;
+      isListening = false;
+      micBtn.classList.remove('listening');
+      if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
+      snapshot(board.value);
+    }
+
+    // ── Keyboard shortcuts ─────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && e.key === 'z') { e.preventDefault(); doUndo(); }
+      if (mod && e.shiftKey  && e.key === 'z') { e.preventDefault(); doRedo(); }
+      if (mod && !e.shiftKey && e.key === 'y') { e.preventDefault(); doRedo(); }
+    });
 
     // ── Toast ──────────────────────────────────────────────────────
     let toastTimer;
@@ -530,100 +777,19 @@
       toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2200);
     }
 
-    // ── Voice to text ──────────────────────────────────────────────
-    const micBtn = document.getElementById('micBtn');
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let isListening = false;
-
-    if (!SpeechRecognition) {
-      micBtn.disabled = true;
-      micBtn.title = 'Voice input not supported in this browser';
+    // ── Helpers ────────────────────────────────────────────────────
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    function toggleVoice() {
-      if (!SpeechRecognition) {
-        showToast('Not supported in this browser', 'error');
-        return;
-      }
-
-      if (isListening) {
-        // User tapped to stop
-        isListening = false;
-        if (recognition) recognition.abort();
-        micBtn.classList.remove('listening');
-        showToast('Stopped recording');
-        snapshot(board.value);
-        return;
-      }
-
-      isListening = true;
-      micBtn.classList.add('listening');
-      showToast('🎤 Listening… tap mic to stop');
-
-      // Capture base text once at start — interim results replace the tail
-      let committedText = board.value;
-      let isStarting = false;
-
-      function startSession() {
-        if (!isListening || isStarting) return;
-        isStarting = true;
-
-        recognition = new SpeechRecognition();
-        recognition.lang = document.getElementById('langSelect').value;
-        recognition.continuous = false;
-        recognition.interimResults = true;
-
-        recognition.onresult = (e) => {
-          let interim = '';
-          let final = '';
-          for (let i = 0; i < e.results.length; i++) {
-            if (e.results[i].isFinal) final += e.results[i][0].transcript;
-            else interim += e.results[i][0].transcript;
-          }
-          if (final) committedText += final;
-          board.value = committedText + interim;
-          board.selectionStart = board.selectionEnd = board.value.length;
-          saveToStorage(board.value);
-          updateStats();
-        };
-
-        recognition.onerror = (e) => {
-          isStarting = false;
-          if (e.error === 'no-speech') {
-            // Silence — just restart quietly
-            if (isListening) setTimeout(startSession, 100);
-            return;
-          }
-          if (e.error === 'aborted') return; // user stopped, ignore
-          isListening = false;
-          micBtn.classList.remove('listening');
-          showToast('Mic error: ' + e.error, 'error');
-        };
-
-        recognition.onend = () => {
-          isStarting = false;
-          if (isListening) {
-            // Auto-restart to keep mic open
-            setTimeout(startSession, 100);
-          } else {
-            snapshot(board.value);
-          }
-        };
-
-        recognition.start();
-      }
-
-      startSession();
+    function formatDate(ts) {
+      const d = new Date(ts);
+      return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+        + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
     }
 
-    // ── Keyboard shortcuts ─────────────────────────────────────────
-    document.addEventListener('keydown', e => {
-      const mod = e.ctrlKey || e.metaKey;
-      if (mod && !e.shiftKey && e.key === 'z') { e.preventDefault(); doUndo(); }
-      if (mod && e.shiftKey  && e.key === 'z') { e.preventDefault(); doRedo(); }
-      if (mod && !e.shiftKey && e.key === 'y') { e.preventDefault(); doRedo(); }
-    });
+    // ── Init ───────────────────────────────────────────────────────
+    renderHome();
   </script>
 </body>
 </html>
